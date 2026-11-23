@@ -21,7 +21,10 @@
         <!-- Compile/test against the minimum supported runtime; works on any newer 4.x runtime -->
         <mule.version>4.9.0</mule.version>
         <skipJavaTests>false</skipJavaTests>
-        <jackson.version>2.18.2</jackson.version>
+        <!-- Security: patched versions of libraries bundled inside the plugin (re-run `snyk test` before bumping) -->
+        <jackson.version>2.18.12</jackson.version>
+        <json-smart.version>2.6.1</json-smart.version>
+        <guava.version>33.7.2-jre</guava.version>
     </properties>
 
     <build>
@@ -77,6 +80,31 @@
     </distributionManagement>
 
     <dependencies>
+        <!--
+          Security: transitive libraries pinned as direct dependencies so the published pom forces patched versions
+          on every consuming application (dependencyManagement is not inherited by consumers in Maven 3).
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>${json-smart.version}</version>
+        </dependency>
+        <!-- anypoint-mq-rest-client 3.1.0 pulls guava 23.5 (only uses Preconditions/Stopwatch/ImmutableList/Lists) -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.mule.sdk</groupId>
             <artifactId>mule-sdk-api</artifactId>
@@ -91,7 +119,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
+            <version>3.18.0</version>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>
@@ -145,7 +173,7 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>2.9.0</version>
+            <version>2.10.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

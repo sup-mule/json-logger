@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,8 +134,7 @@ public class AMQDestination implements Destination {
                         }
                     });
         } catch (Exception e) {
-            LOGGER.error("Error sending message to AMQ: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Error sending message to AMQ: " + e.getMessage(), e);
         }
     }
 
@@ -142,7 +142,7 @@ public class AMQDestination implements Destination {
                                                    java.util.Optional<Charset> charset, String messageId, Map<String, String> properties,
                                                    java.util.Optional<Long> deliveryDelay, java.util.Optional<String> messageGroupId) {
         AnypointMQMessageBuilder messageBuilder = new AnypointMQMessageBuilder();
-        messageBuilder.withBody(new ByteArrayInputStream(messageBody.getBytes()));
+        messageBuilder.withBody(new ByteArrayInputStream(messageBody.getBytes(StandardCharsets.UTF_8)));
 
         String id = java.util.Optional.<Object>ofNullable(messageId).orElseGet(UUID::randomUUID).toString();
         messageBuilder.withMessageId(id);

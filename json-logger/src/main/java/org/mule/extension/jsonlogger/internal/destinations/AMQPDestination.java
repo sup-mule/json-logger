@@ -81,8 +81,7 @@ public class AMQPDestination implements Destination {
                     .build();
             extensionsClient.executeAsync("AMQP", "publish", parameters);
         } catch (Exception e) {
-            LOGGER.error("Error: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Error publishing logs to AMQP: " + e.getMessage(), e);
         }
     }
 
