@@ -46,8 +46,7 @@ public class LogEventHandler implements EventHandler<LogEvent> {
         try {
             this.destinations.get(configName).sendToExternalDestination(aggregatedLogsPerConfig.get(configName).toString());
         } catch (Exception e) {
-            LOGGER.error("Error flushing aggregated logs: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Error flushing aggregated logs: " + e.getMessage(), e);
         }
         aggregatedLogsPerConfig.get(configName).clear();
     }
@@ -60,8 +59,7 @@ public class LogEventHandler implements EventHandler<LogEvent> {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Error flushing all aggregated logs: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Error flushing all aggregated logs: " + e.getMessage(), e);
         }
     }
 }

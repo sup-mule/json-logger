@@ -83,8 +83,7 @@ public class JMSDestination implements Destination {
                     .build();
             extensionsClient.executeAsync("JMS", "publish", parameters);
         } catch (Exception e) {
-            LOGGER.error("Error: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Error publishing logs to JMS: " + e.getMessage(), e);
         }
     }
 

@@ -146,7 +146,7 @@ public class AsyncMuleCourierRestClient extends AbstractCourierRestClient {
 
             @Override
             public RequestBuilder withBody(String body) {
-                this.entity = new ByteArrayHttpEntity(body.getBytes());
+                this.entity = new ByteArrayHttpEntity(body.getBytes(StandardCharsets.UTF_8));
                 return this;
             }
 
@@ -161,7 +161,7 @@ public class AsyncMuleCourierRestClient extends AbstractCourierRestClient {
                 if (!(entity instanceof MultipartHttpEntity)) {
                     this.entity = new MultipartHttpEntity(new ArrayList<>());
                 }
-                ((MultipartHttpEntity) this.entity).getParts().add(new HttpPart(name, value.getBytes(), null, 0));
+                ((MultipartHttpEntity) this.entity).getParts().add(new HttpPart(name, value.getBytes(StandardCharsets.UTF_8), null, 0));
                 return this;
             }
 

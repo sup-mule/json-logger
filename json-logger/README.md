@@ -22,6 +22,10 @@
 * `disabledFields` can now disable any output field (e.g. `threadName`, `locationInfo`, `elapsed`), not only operation parameters
 * JSON content detection now supports `+json` media types (e.g. `application/vnd.api+json`)
 
+**Security**
+* Upgraded libraries bundled in the plugin to patched versions: Jackson 2.18.12 (fixes critical deserialization CVEs), commons-lang3 3.18.0, json-path 2.10.0, json-smart 2.6.1. Guava (pulled in by the Anypoint MQ client) is pinned to 33.7.2-jre
+* These are declared as direct dependencies so consuming applications also resolve the patched versions. A Snyk scan of the demo app reports 0 known vulnerabilities
+
 **Bug fixes**
 * Fixed race condition: the logger category was stored in a shared field of the (singleton) operations instance, so concurrent flows using different categories could log to the wrong category
 * Fixed thread-safety of the external destinations ring buffer (`ProducerType.MULTI`) and configs registry
