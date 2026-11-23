@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+      xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+
+    <http:listener-config name="HTTP_Listener_config">
+        <http:listener-connection host="0.0.0.0" port="8099"/>
+    </http:listener-config>
+
+    <json-logger:config name="JSON_Logger_Config" applicationName="json-logger-test-app" applicationVersion="1.0.0" environment="local"
+                        contentFieldsDataMasking="password,$.card.number" maskingStrategy="PRESERVE_FORMAT"
+                        redactionPatterns="EMAIL,JWT" maxContentLength="2000" logMdcFields="true" logHostInfo="true"/>
+
+    <json-logger:config name="JSON_Logger_Pretty" applicationName="json-logger-test-app" applicationVersion="1.0.0" environment="local"
+                        prettyPrint="true" logLocationInfo="false" disabledFields="threadName"
+                        contentFieldsDataMasking="password" maskingStrategy="HASH" maxContentLength="40"/>
+
+    <!-- 1. basic + payload content + masking + redaction + custom fields + MDC -->
+    <flow name="basic">
+        <http:listener config-ref="HTTP_Listener_config" path="/basic"/>
+        <tracing:set-logging-variable variableName="orderId" value="#[attributes.queryParams.orderId default 'none']"/>
+        <json-logger:logger config-ref="JSON_Logger_Config" message="Request received from someone@example.com" tracePoint="START">
+            <json-logger:custom-fields><![CDATA[#[output application/json --- {orderId: attributes.queryParams.orderId, channel: 'web', priority: 'SHOULD_NOT_OVERRIDE', password: 'Secret1'}]]]></json-logger:custom-fields>
+        </json-logger:logger>
+        <json-logger:logger config-ref="JSON_Logger_Config" message="Done" tracePoint="END" priority="DEBUG">
+            <json-logger:content><![CDATA[#[output application/json --- {status: 'ok', password: 'hunter2', card: {number: '4111-1111-1111-1111'}, contact: 'jane@corp.com'}]]]></json-logger:content>
+        </json-logger:logger>
+        <set-payload value='#[output application/json --- {status: "ok"}]'/>
+    </flow>
+
+    <!-- 2. scope (success) -->
+    <flow name="scope">
+        <http:listener config-ref="HTTP_Listener_config" path="/scope"/>
+        <json-logger:logger-scope configurationRef="JSON_Logger_Config" scopeTracePoint="OUTBOUND_REQUEST_SCOPE" message="Calling backend">
+            <set-payload value="#[output application/json --- {called: true}]"/>
+        </json-logger:logger-scope>
+    </flow>
+
+    <!-- 3. error handler: error field auto-populated, scope exception -->
+    <flow name="failing">
+        <http:listener config-ref="HTTP_Listener_config" path="/fail"/>
+        <json-logger:logger-scope configurationRef="JSON_Logger_Config" scopeTracePoint="FLOW_LOGIC_SCOPE">
+            <raise-error type="APP:BOOM" description="Something went wrong for bob@example.com"/>
+        </json-logger:logger-scope>
+        <error-handler>
+            <on-error-propagate>
+                <json-logger:logger config-ref="JSON_Logger_Config" message="Flow failed" tracePoint="EXCEPTION" priority="ERROR"/>
+                <set-payload value="#[output application/json --- {failed: true}]"/>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+
+    <!-- 4. pretty config, HASH masking, truncation, custom category, disabled fields -->
+    <flow name="pretty">
+        <http:listener config-ref="HTTP_Listener_config" path="/pretty"/>
+        <json-logger:logger config-ref="JSON_Logger_Pretty" message="Pretty with category" category="com.example.audit" tracePoint="FLOW"/>
+        <json-logger:logger config-ref="JSON_Logger_Pretty" message="Big content" tracePoint="FLOW">
+            <json-logger:content><![CDATA[#[output application/json --- {password: 'p@ss', data: (1 to 50) map 'item-$'}]]]></json-logger:content>
+        </json-logger:logger>
+        <set-payload value="ok"/>
+    </flow>
+</mule>

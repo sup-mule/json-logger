@@ -30,6 +30,29 @@
         "isContent": true
       }
     },
+    "customFields": {
+      "type": "string",
+      "javaType": "org.mule.runtime.extension.api.runtime.parameter.ParameterResolver<org.mule.runtime.api.metadata.TypedValue<java.io.InputStream>>",
+      "sdk": {
+        "summary": "Additional structured key/value pairs (DataWeave object) added at the top level of the log entry, e.g. #[{orderId: vars.orderId, customerId: payload.customer.id}]. Standard fields are never overridden",
+        "example": "#[{orderId: vars.orderId}]",
+        "required": false,
+        "isContent": true
+      }
+    },
+    "error": {
+      "type": "string",
+      "javaType": "org.mule.runtime.extension.api.runtime.parameter.ParameterResolver<org.mule.runtime.api.metadata.TypedValue<java.io.InputStream>>",
+      "sdk": {
+        "default": "#[output application/json --- if (error != null) {\n    errorType: (error.errorType.namespace default '') ++ ':' ++ (error.errorType.identifier default ''),\n    description: error.description,\n    detailedDescription: error.detailedDescription,\n    failingComponent: error.failingComponent\n} else null]",
+        "summary": "Error details. Automatically populated when the logger runs inside an error handler, otherwise omitted",
+        "required": false,
+        "isContent": true,
+        "placement": {
+          "tab": "Advanced"
+        }
+      }
+    },
     "tracePoint": {
       "type": "string",
       "javaType": "org.mule.extension.jsonlogger.api.pojos.TracePoint",
