@@ -44,8 +44,8 @@
           "type": "boolean",
           "javaType": "boolean",
           "sdk": {
-            "summary": "Indicate if log entries should be formatted or single line",
-            "default": true,
+            "summary": "Indicate if log entries should be formatted (multi-line) or single line. Single line (default) is recommended for log aggregators (Splunk, ELK, Datadog, CloudWatch) as multi-line entries get split into separate events",
+            "default": false,
             "expressionSupport": "SUPPORTED"
           },
           "note": "This field is mandatory. DON'T REMOVE"
@@ -89,6 +89,65 @@
             "expressionSupport": "NOT_SUPPORTED"
           },
           "note": "This field is mandatory. DON'T REMOVE"
+        },
+        "logTraceContext": {
+          "type": "boolean",
+          "javaType": "boolean",
+          "sdk": {
+            "summary": "Include OpenTelemetry trace context (traceId, spanId) when available. Requires Mule 4.9+ tracing (enabled by default)",
+            "default": true,
+            "expressionSupport": "SUPPORTED"
+          }
+        },
+        "logMdcFields": {
+          "type": "boolean",
+          "javaType": "boolean",
+          "sdk": {
+            "summary": "Include all logging context (MDC) entries under 'context', e.g. variables set with the Tracing module's 'Set logging variable'",
+            "default": false,
+            "expressionSupport": "SUPPORTED"
+          }
+        },
+        "logHostInfo": {
+          "type": "boolean",
+          "javaType": "boolean",
+          "sdk": {
+            "summary": "Include host name and CloudHub/RTF worker id information",
+            "default": false,
+            "expressionSupport": "SUPPORTED"
+          }
+        },
+        "maxContentLength": {
+          "type": "integer",
+          "javaType": "int",
+          "sdk": {
+            "summary": "Maximum characters kept per content field before truncating (0 = no limit). Protects against huge payloads flooding the logs",
+            "default": 0,
+            "expressionSupport": "SUPPORTED"
+          }
+        },
+        "redactionPatterns": {
+          "type": "string",
+          "sdk": {
+            "summary": "Comma separated regular expressions (or built-ins: EMAIL, CREDIT_CARD, SSN, JWT, BEARER_TOKEN, IPV4) applied to every string value of the final log entry. Matches are replaced with the masking string",
+            "example": "EMAIL,CREDIT_CARD,JWT",
+            "required": false,
+            "expressionSupport": "NOT_SUPPORTED"
+          }
+        },
+        "maskingStrategy": {
+          "type": "string",
+          "javaType": "org.mule.extension.jsonlogger.api.pojos.MaskingStrategy",
+          "enum": [
+            "PRESERVE_FORMAT",
+            "FULL",
+            "HASH"
+          ],
+          "sdk": {
+            "summary": "How masked content fields are rendered. PRESERVE_FORMAT keeps shape (Xxxx-****), FULL replaces with '****', HASH replaces with a SHA-256 fingerprint so values can still be correlated",
+            "default": "PRESERVE_FORMAT",
+            "expressionSupport": "NOT_SUPPORTED"
+          }
         }
       },
       "sdk": {

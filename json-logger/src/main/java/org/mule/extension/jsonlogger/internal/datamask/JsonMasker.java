@@ -1,11 +1,6 @@
 package org.mule.extension.jsonlogger.internal.datamask;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -14,6 +9,11 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 
+import org.mule.extension.jsonlogger.api.pojos.MaskingStrategy;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -27,17 +27,29 @@ public class JsonMasker {
             .jsonProvider(new JacksonJsonNodeJsonProvider())
             .options(Option.AS_PATH_LIST, Option.SUPPRESS_EXCEPTIONS).build();
 
+    public static final String FULL_MASK = "****";
+
     private final Set<String> blacklistedKeys;
     private final Set<JsonPath> blacklistedJsonPaths;
     private final boolean enabled;
+    private final MaskingStrategy strategy;
 
     public JsonMasker(Collection<String> blacklist, boolean enabled) {
+        this(blacklist, enabled, MaskingStrategy.PRESERVE_FORMAT);
+    }
+
+    public JsonMasker(Collection<String> blacklist, boolean enabled, MaskingStrategy strategy) {
         this.enabled = enabled;
+        this.strategy = (strategy == null) ? MaskingStrategy.PRESERVE_FORMAT : strategy;
 
         blacklistedKeys = new HashSet<>();
         blacklistedJsonPaths = new HashSet<>();
 
-        blacklist.forEach(item -> {
+        blacklist.forEach(rawItem -> {
+            String item = rawItem.trim();
+            if (item.isEmpty()) {
+                return;
+            }
             if (item.startsWith("$")) {
                 blacklistedJsonPaths.add(JsonPath.compile(item));
             } else {
@@ -58,8 +70,12 @@ public class JsonMasker {
         this(blacklist, true);
     }
 
+    public boolean hasRules() {
+        return !blacklistedKeys.isEmpty() || !blacklistedJsonPaths.isEmpty();
+    }
+
     public JsonNode mask(JsonNode target) {
-        if (!enabled)
+        if (!enabled || !hasRules())
             return target;
         if (target == null)
             return null;
@@ -80,11 +96,8 @@ public class JsonMasker {
 
     @SuppressWarnings("ConstantConditions")
     private JsonNode traverseAndMask(JsonNode target, Set<String> expandedBlacklistedPaths, String path, Boolean isBlackListed) {
-        if (target.isTextual() && isBlackListed) {
-            return new TextNode(maskString(target.asText()));
-        }
-        if (target.isNumber() && isBlackListed) {
-            return new TextNode(maskNumber(target.asText()));
+        if ((target.isTextual() || target.isNumber() || target.isBoolean()) && isBlackListed) {
+            return new TextNode(maskValue(target));
         }
 
         if (target.isObject()) {
@@ -118,6 +131,32 @@ public class JsonMasker {
 
     private static String appendPath(String path, int ind) {
         return path + "[" + ind + "]";
+    }
+
+    private String maskValue(JsonNode value) {
+        switch (strategy) {
+            case FULL:
+                return FULL_MASK;
+            case HASH:
+                return "sha256:" + sha256(value.asText()).substring(0, 16);
+            case PRESERVE_FORMAT:
+            default:
+                return value.isNumber() ? maskNumber(value.asText()) : maskString(value.asText());
+        }
+    }
+
+    static String sha256(String value) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static String maskString(String value) {

@@ -33,7 +33,7 @@ public class LogEventSingleton implements Initialisable, Disposable {
 
     private HashMap<String, Destination> destinations = new HashMap<String, Destination>();
 
-    // Construct the Disruptor
+    // Construct the Disruptor (MULTI producer: logs are published concurrently from many Mule threads)
     private Disruptor<LogEvent> disruptor;
     private RingBuffer<LogEvent> ringBuffer;
     private LogEventHandler logEventHandler;
@@ -55,7 +55,7 @@ public class LogEventSingleton implements Initialisable, Disposable {
         WaitStrategy waitStrategy = new LiteTimeoutBlockingWaitStrategy(WAIT_TIMEOUT, TimeUnit.MILLISECONDS);
 
         // Init disruptor ring buffer
-        this.disruptor  = new Disruptor<>(LogEvent::new, BUFFER_SIZE, DaemonThreadFactory.INSTANCE, ProducerType.SINGLE, waitStrategy);
+        this.disruptor  = new Disruptor<>(LogEvent::new, BUFFER_SIZE, DaemonThreadFactory.INSTANCE, ProducerType.MULTI, waitStrategy);
 
         // Load external destinations
         configs.getConfigs().forEach(

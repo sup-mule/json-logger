@@ -20,6 +20,35 @@ As mentioned above, this is a Java SDK based Mule 4 connector. However, in order
 
 In a nutshell, by defining the output JSON schema as well as providing some additional SDK specific details (e.g. default values, default expressions, etc.), we can dynamically generate a module that aligns to those schemas.
 
+## Compatibility
+
+| JSON Logger | Mule runtime | Java |
+|---|---|---|
+| 3.x | 4.9.0+ (tested on 4.13.0) | 17, 21 |
+| 2.1.x | 4.3.0 - 4.8.x | 8, 11 |
+
+## Feature highlights (3.x)
+
+- Structured single-line JSON with correlation id, trace point, elapsed time, location, application/environment info
+- OpenTelemetry trace correlation (`traceId`, `spanId`) and logging-context (MDC) enrichment
+- Custom top-level fields from DataWeave (`customFields`) and automatic `error` details inside error handlers
+- Data protection: JSON key / JSON path masking with `PRESERVE_FORMAT`, `FULL` or `HASH` strategies, plus regex redaction (`EMAIL`, `CREDIT_CARD`, `SSN`, `JWT`, `BEARER_TOKEN`, `IPV4` or custom)
+- Payload protection with `maxContentLength` truncation
+- Logger scope to measure the elapsed time of any group of components
+- Asynchronous external destinations (Anypoint MQ, JMS, AMQP)
+
+A runnable example covering every feature lives in [examples/json-logger-demo-app](examples/json-logger-demo-app).
+
+```xml
+<json-logger:config name="JSON_Logger_Config" environment="${mule.env}"
+                    contentFieldsDataMasking="password,$..card.number" maskingStrategy="HASH"
+                    redactionPatterns="EMAIL,JWT" maxContentLength="10000" logMdcFields="true"/>
+
+<json-logger:logger config-ref="JSON_Logger_Config" message="Order received" tracePoint="START">
+    <json-logger:custom-fields>#[output application/json --- {orderId: vars.orderId}]</json-logger:custom-fields>
+</json-logger:logger>
+```
+
 ## Installation
 
 Please check these blogposts for more details:
