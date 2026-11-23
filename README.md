@@ -48,13 +48,18 @@ Prerequisites: **JDK 17** (make sure `JAVA_HOME` points to it) and **Maven 3.9+*
 **Option A - publish to your Anypoint Exchange** (recommended for teams):
 
 ```bash
-./deploy-to-exchange.sh <ANYPOINT_ORG_ID>
+./deploy-to-exchange.sh <ANYPOINT_ORG_ID>                       # publish
+./deploy-to-exchange.sh --dry-run <ANYPOINT_ORG_ID>             # build + test only, nothing is published
+./deploy-to-exchange.sh --region eu <ANYPOINT_ORG_ID>           # EU control plane
+./deploy-to-exchange.sh --server-id my-anypoint <ANYPOINT_ORG_ID>  # use another <server> id from settings.xml
+./deploy-to-exchange.sh -s path/to/settings.xml <ANYPOINT_ORG_ID> -- -DskipTests
 ```
 
-The script replaces `ORG_ID_TOKEN` in `json-logger/pom.xml` with your organisation id and runs `mvn clean deploy`. The `Exchange2` server credentials must be set in your Maven `settings.xml`.
+The script checks that JDK 17+ and Maven are available and that the org id is a valid UUID. It then puts your org id (and the regional Exchange URL) into `json-logger/pom.xml` for the build only and runs `mvn clean deploy`. The pom is always restored afterwards, even if the build fails or you press Ctrl+C, so you can run it as often as you like.
 
-- Exchange doesn't accept the same version twice. Bump `<version>` in `json-logger/pom.xml` before you redeploy, or delete the asset within 7 days.
-- For the **EU control plane**, change the `<distributionManagement>` URL (and the `Exchange2` repository) in `json-logger/pom.xml` to `https://maven.eu1.anypoint.mulesoft.com/api/v1/organizations/${project.groupId}/maven`.
+- Credentials come from a `<server>` in your Maven `settings.xml` (default id `Exchange2`, see [`template-files/settings.xml`](template-files/settings.xml)), holding your Anypoint username and password or a connected app (`~~~Client~~~` as the username, `clientId~?~clientSecret` as the password).
+- Exchange doesn't accept the same version twice. Bump `<version>` in `json-logger/pom.xml` before you publish again.
+- Run `./deploy-to-exchange.sh --help` for all options.
 
 **Option B - install to your local Maven repository** (local development / try-out):
 
